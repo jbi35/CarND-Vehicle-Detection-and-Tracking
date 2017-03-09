@@ -9,7 +9,7 @@ import argparse
 from moviepy.editor import VideoFileClip
 
 # Define a class to handle lane line detection
-class LaneLineDetector:
+class LaneLineAndCarDetection:
     def __init__(self,debug):
         self.my_image_processor = ImageProcessor()
 
@@ -200,9 +200,9 @@ if __name__ == '__main__':
     print('lane detection: {}'.format(detect_lanes))
     print('Debug mode: {}'.format(debug))
 
-    my_lanes_line_detector=LaneLineDetector(debug)
+    my_lane_line_and_car_detection=LaneLineAndCarDetection(debug)
 
-    my_lanes_line_detector.process_test_video(input_file,output_file,detect_lanes,detect_cars)
+    my_lane_line_and_car_detection.process_test_video(input_file,output_file,detect_lanes,detect_cars)
 
 
 
