@@ -1,4 +1,5 @@
 from ImageProcessor import ImageProcessor
+from CarDetector import CarDetector
 from LaneLine       import LaneLine
 import cv2
 import matplotlib.image as mpimg
@@ -19,10 +20,14 @@ class LaneLineAndCarDetection:
 
         self.debug=debug
 
+        self.my_car_detector = CarDetector()
+
     def apply_car_pipeline(self,img):
         # undistort image
         undistorted_img = self.my_image_processor.undistort_image(img)
-        return undistorted_img
+
+        car_image = self.my_car_detector.detect_car_in_frame(undistorted_img)
+        return car_image
 
     def apply_lane_pipeline(self,img):
 
