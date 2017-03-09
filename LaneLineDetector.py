@@ -19,7 +19,12 @@ class LaneLineDetector:
 
         self.debug=debug
 
-    def apply_pipeline(self,img):
+    def apply_car_pipeline(self,img):
+        # undistort image
+        undistorted_img = self.my_image_processor.undistort_image(img)
+        return undistorted_img
+
+    def apply_lane_pipeline(self,img):
 
         # undistort image
         undistorted_img = self.my_image_processor.undistort_image(img)
@@ -135,10 +140,14 @@ class LaneLineDetector:
 
 
 
-    def process_test_video(self,input_file,output_file,start=0.0,end=2.0):
+    def process_test_video(self,input_file,output_file,detect_lanes,detect_carsstart=0.0,end=2.0):
         video = VideoFileClip(input_file)
         #video = video.subclip(t_start=start, t_end=end)
-        processed_video = video.fl_image(self.apply_pipeline)
+        if detect_lanes:
+            processed_video = video.fl_image(self.apply_lane_pipeline)
+        if detect_cars:
+            processed_video = video.fl_image(self.apply_car_pipeline)
+
         processed_video.write_videofile(output_file,audio=False)
 
 
@@ -155,6 +164,9 @@ if __name__ == '__main__':
     parser.add_argument('--input', type=str, default='project_video.mp4', help='input video')
     parser.add_argument('--output', default='output.mp4', type=str, help='output video')
     parser.add_argument('--debug', type=str, default='no', help='debug mode yes/no')
+    parser.add_argument('--detect_lanes', type=str, default='no', help='toggle lane line detection yes/no')
+    parser.add_argument('--detect_cars', type=str, default='no', help='toggle car detection yes/no')
+
     args = parser.parse_args()
     input_file = args.input
     output_file = args.output
@@ -166,12 +178,33 @@ if __name__ == '__main__':
         print('Warning input flag not set correctly not showing debug information')
         debug = False
 
+    if args.detect_lanes == 'yes':
+        detect_lanes = True
+    elif args.detect_lanes == 'no':
+        detect_lanes = False
+    else:
+        print('Warning input flag not set correctly not detecting lane lines')
+        detect_lanes = False
+
+    if args.detect_cars == 'yes':
+        detect_cars = True
+    elif args.detect_cars == 'no':
+        detect_cars = False
+    else:
+        print('Warning input flag not set correctly not detecting cars')
+        detect_cars = False
+
     print('Input file: {}'.format(input_file))
     print('Output file: {}'.format(output_file))
+    print('Car detection: {}'.format(detect_cars))
+    print('lane detection: {}'.format(detect_lanes))
     print('Debug mode: {}'.format(debug))
 
     my_lanes_line_detector=LaneLineDetector(debug)
 
-    my_lanes_line_detector.process_test_video(input_file,output_file)
+    my_lanes_line_detector.process_test_video(input_file,output_file,detect_lanes,detect_cars)
+
+
+
     #my_lanes_line_detector.undistort_calibration_images_for_writeup()
     #my_lanes_line_detector.process_test_images()
