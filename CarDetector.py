@@ -48,7 +48,6 @@ class CarDetector:
             hot_windows_pic = draw_boxes(image, hot_windows)
             mpimg.imsave('pipeline_images/'+frame_id+'_hot_windows_combined.png', hot_windows_pic)
 
-
         # Read in image similar to one shown above
         heat = np.zeros_like(image[:,:,0]).astype(np.float)
 
@@ -69,14 +68,13 @@ class CarDetector:
         heat_new = apply_threshold(new_heat,8)
 
         # Visualize the heatmap when displaying
-
         heatmap = np.clip(heat_new, 0, 255)
 
         if draw:
             plt.imsave('pipeline_images/'+frame_id+'_heatmap_combined.png',heatmap, cmap='hot')
             heatmap_single_frame = np.clip(heat, 0, 255)
             plt.imsave('pipeline_images/'+frame_id+'_heatmap.png',heatmap_single_frame, cmap='hot')
-        #return heatmap
+            
         # Find final boxes from heatmap using label function
         labels = label(heatmap)
         if draw:

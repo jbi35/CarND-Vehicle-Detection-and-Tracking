@@ -39,14 +39,14 @@ I then explored different color spaces and different `skimage.hog()` parameters 
 
 I tried to increase the number of pixels per cell to increase the speed of the whole pipeline.
 However, the test accuracy was significantly lower, when I increased the number of pixels per cell.
-With the above described parameter choice I trained a linear SVM after scaling the features using
+With the above described parameter choice I trained a linear SVC after scaling the features using
 a `StandardScaler()` and randomly splitting the data set into a test and training dataset.
 I achieved a test accuracy of 99.13%. I then saved the SVC, the scaler, and all parameters into a `.pickle`file so that
 it can be reused without having to retrain the classifier. The code for training the classifier can be found in lines 104-117 in the file `build_classfier.py`.
 
 ### Sliding Window Search
-I decided to implement a multi-scale sliding window search based. To increase the processing speed of the pipeline I used the `hog_subsampling` function provided in the lecture as a starting point. This function allowed me to compute the HOG features all at once for each window "scale". I found that a four-scale approach with window sizes 64x64, 96x96, 128x128, and 196x196 provides nice results. Again to improve efficiency, I excluded the upper half of the frame from the sliding window search, starting the search at `y=400`. In addition, search using the smaller windows is focused on the middle part of the image, since the cars there will appear smaller. Cars in the lower part of the image will appear larger since they are closer. Therefore, the search using larger windows is focused on the lower part of the frame. The multi-scale sliding window search is implemented in the `CarDetector` class in the `CarDetector.py` file in the lines 32-37. The function doing the actual search can be found in the lines
-91-151. During the sliding window search, the windows are usually advanced two cells at a time. However, I found that the algorithm performed better if I reduced this to one cell per step for the 96x96 window size an thereby increased the overlap.  
+I decided to implement a multi-scale sliding window search. To increase the processing speed of the pipeline I used the `hog_subsampling` function provided in the lecture as a starting point. This function allowed me to compute the HOG features all at once for each window "scale". I found that a four-scale approach with window sizes 64x64, 96x96, 128x128, and 196x196 provided nice results. Again to improve efficiency, I excluded the upper half of the frame from the sliding window search, starting the search at `y=400`. In addition, the search using the smaller windows is focused on the middle part of the image, since the cars there will appear smaller. Cars in the lower part of the image will appear larger, since they are closer. Therefore, the search using larger windows is focused more on the lower part of the frame. The multi-scale sliding window search is implemented in the `CarDetector` class in the `CarDetector.py` file in the lines 32-37. The function doing the actual search can be found in the lines
+89-149. During the sliding window search, the windows are usually advanced two cells at a time. However, I found that the algorithm performed better if I reduced this to one cell per step for the 96x96 window size an thereby increased the overlap. The pictures below show the multi-scale sliding window search for all four scales.
 
 
 ![alt text][image1]
@@ -62,7 +62,7 @@ I decided to implement a multi-scale sliding window search based. To increase th
 ---
 
 ### Video Implementation
-For the video processing pipeline, I focused on making the car detection more reliable. In particular I tried to reduce false positives using a heatmap averaged across multiple frames. Starting with the positive detections from the multi-scale sliding window search for an individual frame, I created a heatmap and then thresholded that map to identify vehicle positions. Then I combined this heatmap with the heatmaps from the four previous frames and then thresholded this heatmap again.
+For the video processing pipeline, I focused on making the car detection more reliable. In particular I tried to reduce false positives using a heatmap averaged across multiple frames. Starting with the positive detections from the multi-scale sliding window search for an individual frame, I created a heatmap and then thresholded that map to identify vehicle positions. Then I combined this heatmap with the heatmaps from the four previous frames and then thresholded this heatmap again, see line 51-86 in `CarDetector.py`.
 
 The motivation behind this is twofold. First, this technique reduces false positives. Second, it stabilizes the detection of the car. If a car is not detected in an individual frame, but has been correctly detected in the frames before, a window surrounding the car can still be produced using the heatmaps from previous frames.
 
@@ -93,13 +93,14 @@ The complete video can be found here.
 
 Here's a [link to my video result](./output_final.mp4)
 
+
 ---
 
 ### Discussion
-At first I was surprised by the high number of false positives after performing the sliding window search, given that the test accuracy of the svc was above 99%. Then I realized that
+At first I was surprised by the high number of false positives after performing the sliding window search, given that the test accuracy of the SVC was above 99%. Then I realized that
 this behavior comes from the fact that I am essentially doing more than a hundred image classifications per frame, most which do not contain cars, which explains the relatively high number of false positives. Using thresholded heatmaps averaged over multiple frames reduces the amount of false positives drastically. However, there are still some false positives that are not filtered out by this approach, yet. Normally, I would start tweaking the algorithm further to get rid of these as well. Unfortunately, the end of term 1 is so close that I have no more time to do this.
 
-One idea to improve the performance would be to use a second, different type of classifier in addition to the svc, e.g., a random forest or a deep neural net. One could use this second classifier to double check the detections produced by the first one. Or let them work in parallel and then combine the results.
+One idea to improve the performance would be to use a second, different type of classifier in addition to the SVC, e.g., a random forest or a deep neural net. One could use this second classifier to double check the detections produced by the first one. Or let them work in parallel and then combine the results.
 
 Another weakness of my current implementation is the low processing speed. Processing the 50 second project video takes roughly 20 minutes on my MacBook Pro. One could probably try to speed up the multi-scale sliding window search and also try to use fewer scales. In addition it would make sense to avoid the sliding window search in every frame. Instead, one could try to search only in the vicinity of cars detected in the previous frames and in areas of the frame where new cars could enter, i.e., at the sides and the horizon. It would probably also make sense to include some kind of model for a car to predict its position from its location in previous frames.
 
