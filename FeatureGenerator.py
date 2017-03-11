@@ -11,7 +11,7 @@ def get_hog_features(img, orient, pix_per_cell, cell_per_block,
         features, hog_image = hog(img, orientations=orient,
                                   pixels_per_cell=(pix_per_cell, pix_per_cell),
                                   cells_per_block=(cell_per_block, cell_per_block),
-                                  transform_sqrt=True,
+                                  transform_sqrt=False,
                                   visualise=vis, feature_vector=feature_vec)
         return features, hog_image
     # Otherwise call with one output
@@ -19,7 +19,7 @@ def get_hog_features(img, orient, pix_per_cell, cell_per_block,
         features = hog(img, orientations=orient,
                        pixels_per_cell=(pix_per_cell, pix_per_cell),
                        cells_per_block=(cell_per_block, cell_per_block),
-                       transform_sqrt=True,
+                       transform_sqrt=False,
                        visualise=vis, feature_vector=feature_vec)
         return features
 
@@ -30,6 +30,8 @@ def convert_color(img, conv='RGB2YCrCb'):
         return cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
     if conv == 'RGB2LUV':
         return cv2.cvtColor(img, cv2.COLOR_RGB2LUV)
+    else:
+        return img
 
 # Define a function to compute binned color features
 def bin_spatial(img, size=(32, 32)):
@@ -51,6 +53,7 @@ def color_hist(img, nbins=32, bins_range=(0, 256)):
     return hist_features
 
 
+
 # Define a function to extract features from a list of images
 # Have this function call bin_spatial() and color_hist()
 def extract_features(imgs, color_space='RGB', spatial_size=(32, 32),
@@ -63,7 +66,7 @@ def extract_features(imgs, color_space='RGB', spatial_size=(32, 32),
     for file in imgs:
         file_features = []
         # Read in each one by one
-        image = mpimg.imread(file)
+        image = mpimg.imread(file) # reads 0-1
         # apply color conversion if other than 'RGB'
         if color_space != 'RGB':
             if color_space == 'HSV':
@@ -76,8 +79,10 @@ def extract_features(imgs, color_space='RGB', spatial_size=(32, 32),
                 feature_image = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
             elif color_space == 'YCrCb':
                 feature_image = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
+            #feature_image=feature_image.astype(np.float32)/255
         else: feature_image = np.copy(image)
-
+        #print("max value")
+        #aprint(max(feature_image[:,1]))
         if spatial_feat == True:
             spatial_features = bin_spatial(feature_image, size=spatial_size)
             file_features.append(spatial_features)

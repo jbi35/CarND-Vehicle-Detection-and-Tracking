@@ -24,9 +24,12 @@ class LaneLineAndCarDetection:
 
     def apply_car_pipeline(self,img):
         # undistort image
-        undistorted_img = self.my_image_processor.undistort_image(img)
+        #ndistorted_img = self.my_image_processor.undistort_image(img)
 
-        car_image = self.my_car_detector.detect_car_in_frame(undistorted_img)
+        #car_image = self.my_car_detector.detect_car_in_frame(undistorted_img)
+        car_image = self.my_car_detector.detect_car_in_frame(img)
+        #car_image = self.my_car_detector.find_cars(undistorted_img)
+
         return car_image
 
     def apply_lane_pipeline(self,img):
@@ -145,7 +148,7 @@ class LaneLineAndCarDetection:
 
 
 
-    def process_test_video(self,input_file,output_file,detect_lanes,detect_carsstart=0.0,end=2.0):
+    def process_test_video(self,input_file,output_file,detect_lanes,detect_cars,start=0.0,end=2.0):
         video = VideoFileClip(input_file)
         #video = video.subclip(t_start=start, t_end=end)
         if detect_lanes:
@@ -166,7 +169,7 @@ class LaneLineAndCarDetection:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Advanced lane line detection")
-    parser.add_argument('--input', type=str, default='project_video.mp4', help='input video')
+    parser.add_argument('--input', type=str, default='test_video.mp4', help='input video')
     parser.add_argument('--output', default='output.mp4', type=str, help='output video')
     parser.add_argument('--debug', type=str, default='no', help='debug mode yes/no')
     parser.add_argument('--detect_lanes', type=str, default='no', help='toggle lane line detection yes/no')
