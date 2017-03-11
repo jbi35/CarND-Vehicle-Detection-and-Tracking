@@ -22,13 +22,15 @@ class LaneLineAndCarDetection:
 
         self.my_car_detector = CarDetector()
 
+        self.frame_id = 0
+
     def apply_car_pipeline(self,img):
         # undistort image
         #ndistorted_img = self.my_image_processor.undistort_image(img)
 
         #car_image = self.my_car_detector.detect_car_in_frame(undistorted_img)
-        car_image = self.my_car_detector.detect_car_in_frame(img)
-        #car_image = self.my_car_detector.find_cars(undistorted_img)
+        car_image = self.my_car_detector.detect_car_in_frame(img,str(self.frame_id))
+        self.frame_id += 1
 
         return car_image
 
@@ -148,9 +150,9 @@ class LaneLineAndCarDetection:
 
 
 
-    def process_test_video(self,input_file,output_file,detect_lanes,detect_cars,start=0.0,end=2.0):
+    def process_test_video(self,input_file,output_file,detect_lanes,detect_cars,start=24.0,end=34.0):
         video = VideoFileClip(input_file)
-        #video = video.subclip(t_start=start, t_end=end)
+        video = video.subclip(t_start=start, t_end=end)
         if detect_lanes:
             processed_video = video.fl_image(self.apply_lane_pipeline)
         if detect_cars:

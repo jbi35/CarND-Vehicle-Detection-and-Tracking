@@ -29,12 +29,25 @@ class CarDetector:
         self.old_heat2 = np.zeros((720,1280))
         self.old_heat1 = np.zeros((720,1280))
 
-    def detect_car_in_frame(self,image):
-        hot_windows1 = self.find_cars(image,scale=1,ystart=350,ystop=478)
-        hot_windows2 = self.find_cars(image,scale=1.5,ystart=350,ystop=600)
-        hot_windows3 = self.find_cars(image,scale=2,ystart=400,ystop=656)
-        hot_windows4 = self.find_cars(image,scale=3,ystart=508,ystop=700)
+    def detect_car_in_frame(self,image,frame_id,draw=False):
+        hot_windows1 = self.find_cars(image,scale=1,cells_per_step=2,ystart=400,ystop=496)
+        hot_windows2 = self.find_cars(image,scale=1.5,cells_per_step=1,ystart=400,ystop=600)
+        hot_windows3 = self.find_cars(image,scale=2,cells_per_step=2,ystart=400,ystop=656)
+        hot_windows4 = self.find_cars(image,scale=3,cells_per_step=2,ystart=400,ystop=700)
         hot_windows = hot_windows1+hot_windows2+hot_windows3+hot_windows4
+
+        if draw:
+            hot_windows_pic1 = draw_boxes(image, hot_windows1)
+            mpimg.imsave('pipeline_images/'+frame_id+'_hot_windows1.png', hot_windows_pic1)
+            hot_windows_pic2 = draw_boxes(image, hot_windows2)
+            mpimg.imsave('pipeline_images/'+frame_id+'_hot_windows2.png', hot_windows_pic2)
+            hot_windows_pic3 = draw_boxes(image, hot_windows3)
+            mpimg.imsave('pipeline_images/'+frame_id+'_hot_windows3.png', hot_windows_pic3)
+            hot_windows_pic4 = draw_boxes(image, hot_windows4)
+            mpimg.imsave('pipeline_images/'+frame_id+'_hot_windows4.png', hot_windows_pic4)
+            hot_windows_pic = draw_boxes(image, hot_windows)
+            mpimg.imsave('pipeline_images/'+frame_id+'_hot_windows_combined.png', hot_windows_pic)
+
 
         # Read in image similar to one shown above
         heat = np.zeros_like(image[:,:,0]).astype(np.float)
@@ -44,7 +57,7 @@ class CarDetector:
 
         # Apply threshold to help remove false positives
         heat = apply_threshold(heat,2)
-        heat = threshold_heat(heat)
+        #heat = threshold_heat(heat)
         self.old_heat5 = self.old_heat4
         self.old_heat4 = self.old_heat3
         self.old_heat3 = self.old_heat2
@@ -53,20 +66,29 @@ class CarDetector:
         new_heat = self.old_heat5 + self.old_heat4 +self.old_heat3 +self.old_heat2 +self.old_heat1
 
         # average heat over 5 frames
-        heat = apply_threshold(new_heat,3)
-        #self.old_heat = heat
+        heat_new = apply_threshold(new_heat,8)
 
         # Visualize the heatmap when displaying
-        heatmap = np.clip(heat, 0, 255)
 
+        heatmap = np.clip(heat_new, 0, 255)
+
+        if draw:
+            plt.imsave('pipeline_images/'+frame_id+'_heatmap_combined.png',heatmap, cmap='hot')
+            heatmap_single_frame = np.clip(heat, 0, 255)
+            plt.imsave('pipeline_images/'+frame_id+'_heatmap.png',heatmap_single_frame, cmap='hot')
+        #return heatmap
         # Find final boxes from heatmap using label function
         labels = label(heatmap)
+        if draw:
+            plt.imsave('pipeline_images/'+frame_id+'_labels.png',labels[0], cmap='gray')
+
         draw_img = draw_labeled_bboxes(np.copy(image), labels)
-        #window_img = draw_boxes(draw_image, hot_windows , color=(0, 0, 255), thick=6)
+        if draw:
+            plt.imsave('pipeline_images/'+frame_id+'_final_detection.png',draw_img)
         return draw_img
 
     # Define a single function that can extract features using hog sub-sampling and make predictions
-    def find_cars(self,img,scale,ystart,ystop):
+    def find_cars(self,img,scale,cells_per_step,ystart,ystop):
         window_list = []
 
         img = img.astype(np.float32)/255
@@ -88,7 +110,7 @@ class CarDetector:
         # 64 was the orginal sampling rate, with 8 cells and 8 pix per cell
         window = 64
         nblocks_per_window = (window // self.pix_per_cell)-1
-        cells_per_step = 2  # Instead of overlap, define how many cells to step
+        #cells_per_step = 2  # Instead of overlap, define how many cells to step
         nxsteps = (nxblocks - nblocks_per_window) // cells_per_step
         nysteps = (nyblocks - nblocks_per_window) // cells_per_step
 
@@ -226,54 +248,3 @@ def draw_labeled_bboxes(img, labels):
         cv2.rectangle(img, bbox[0], bbox[1], (0,255,0), 6)
     # Return the image
     return img
-
-def extract_features(imgs, color_space='RGB', spatial_size=(32, 32),
-                        hist_bins=32, orient=9,
-                        pix_per_cell=8, cell_per_block=2, hog_channel=0,
-                        spatial_feat=True, hist_feat=True, hog_feat=True):
-    # Create a list to append feature vectors to
-    features = []
-    # Iterate through the list of images
-    for file in imgs:
-        file_features = []
-        # Read in each one by one
-        image = mpimg.imread(file) # reads 0-1
-        # apply color conversion if other than 'RGB'
-        if color_space != 'RGB':
-            if color_space == 'HSV':
-                feature_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-            elif color_space == 'LUV':
-                feature_image = cv2.cvtColor(image, cv2.COLOR_RGB2LUV)
-            elif color_space == 'HLS':
-                feature_image = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
-            elif color_space == 'YUV':
-                feature_image = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
-            elif color_space == 'YCrCb':
-                feature_image = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
-        else: feature_image = np.copy(image)
-        #print("max value")
-        #aprint(max(feature_image[:,1]))
-        if spatial_feat == True:
-            spatial_features = bin_spatial(feature_image, size=spatial_size)
-            file_features.append(spatial_features)
-        if hist_feat == True:
-            # Apply color_hist()
-            hist_features = color_hist(feature_image, nbins=hist_bins)
-            file_features.append(hist_features)
-        if hog_feat == True:
-        # Call get_hog_features() with vis=False, feature_vec=True
-            if hog_channel == 'ALL':
-                hog_features = []
-                for channel in range(feature_image.shape[2]):
-                    hog_features.append(get_hog_features(feature_image[:,:,channel],
-                                        orient, pix_per_cell, cell_per_block,
-                                        vis=False, feature_vec=True))
-                hog_features = np.ravel(hog_features)
-            else:
-                hog_features = get_hog_features(feature_image[:,:,hog_channel], orient,
-                            pix_per_cell, cell_per_block, vis=False, feature_vec=True)
-            # Append the new feature vector to the features list
-            file_features.append(hog_features)
-        features.append(np.concatenate(file_features))
-    # Return list of feature vectors
-    return features
